@@ -6,6 +6,12 @@ All walkthroughs are published **after** the machine has been retired, per [HTB 
 
 ## Machines
 
-| Machine | Difficulty | OS | Key Techniques |
-|---------|-----------|-----|----------------|
-| *Coming soon* | | | |
+| Machine | Difficulty | OS |
+|---------|-----------|-----|
+| Meow | Very Easy | Linux |
+| Fawn | Very Easy | Linux |
+| Dancing | Very Easy | Windows |
+| Redeemer | Very Easy | Linux |
+| Cap | Easy | Linux |
+| WingData | Easy | Linux |
+| Pterodactyl | Medium | Linux |
