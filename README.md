@@ -4,16 +4,16 @@ Writeups for retired [Hack The Box](https://www.hackthebox.com/) machines.
 
 ## Machines
 
-| Machine | Difficulty | OS | Key Techniques |
-|---------|-----------|-----|----------------|
-| Meow | Very Easy | Linux | Telnet, blank credentials |
-| Fawn | Very Easy | Linux | Anonymous FTP |
-| Dancing | Very Easy | Windows | SMB null session |
-| Redeemer | Very Easy | Linux | Redis unauthenticated access |
-| Cap | Easy | Linux | IDOR, PCAP credential extraction, cap_setuid privesc |
-| WingData | Easy | Linux | *writeup pending retirement* |
-| Pterodactyl | Medium | Linux | *writeup pending retirement* |
-| Facts | Easy | Linux | *writeup pending retirement* |
+| Machine | Difficulty | OS | Key Techniques | Walkthrough |
+|---------|-----------|-----|----------------|-------------|
+| Cap | Easy | Linux | IDOR, PCAP credential extraction, cap_setuid privesc | [Writeup](machines/Cap.md) |
+| Dancing | Very Easy | Windows | SMB null session | [Writeup](machines/Dancing.md) |
+| Facts | Easy | Linux | *writeup pending retirement* | — |
+| Fawn | Very Easy | Linux | Anonymous FTP | [Writeup](machines/Fawn.md) |
+| Meow | Very Easy | Linux | Telnet, Blank credentials | [Writeup](machines/Meow.md) |
+| Pterodactyl | Medium | Linux | *writeup pending retirement* | — |
+| Redeemer | Very Easy | Linux | Redis unauthenticated access | [Writeup](machines/Redeemer.md) |
+| WingData | Easy | Linux | *writeup pending retirement* | — |
 
 ---
 
