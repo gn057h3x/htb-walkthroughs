@@ -11,8 +11,8 @@ Writeups for retired [Hack The Box](https://www.hackthebox.com/) machines.
 | Dancing | Very Easy | Windows | SMB null session |
 | Redeemer | Very Easy | Linux | Redis unauthenticated access |
 | Cap | Easy | Linux | IDOR, PCAP credential extraction, cap_setuid privesc |
-| WingData | Easy | Linux | CVE-2025-47812 (Lua injection), CVE-2025-4517 (tarfile path bypass) |
-| Pterodactyl | Medium | Linux | CVE-2025-49132 (LFI), Pearcmd RCE, CVE-2025-6018/6019 (PAM injection + UDisks2 nosuid bypass) |
+| WingData | Easy | Linux | *writeup pending retirement* |
+| Pterodactyl | Medium | Linux | *writeup pending retirement* |
 | Facts | Easy | Linux | *writeup pending retirement* |
 
 ---
