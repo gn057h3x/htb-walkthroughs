@@ -58,7 +58,3 @@ ftp> get flag.txt
 - Anonymous FTP is a common misconfiguration that can expose sensitive files. Always check for it during recon.
 - Nmap's default scripts (`-sC`) include `ftp-anon`, which automatically detects anonymous access and lists visible files — no manual testing needed.
 - `curl` can pull FTP files in a single command, which is faster than an interactive session for quick grabs.
-
----
-
-*Walkthrough by Jack — 2026-02-16*

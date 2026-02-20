@@ -55,7 +55,3 @@ The `root` account accepts a blank password. No brute-forcing, no credential hun
 - Default and blank credentials on privileged accounts are still one of the most common findings in real environments.
 - Always test common usernames (`root`, `admin`, `administrator`) with empty passwords before moving to wordlists.
 - The Telnet banner can be slow to appear on HTB — give it a few seconds before assuming the connection failed.
-
----
-
-*Walkthrough by Jack — 2026-02-16*

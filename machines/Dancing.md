@@ -77,7 +77,3 @@ The null session gives read access to `WorkShares`. Inside are two user director
 - Non-default shares (`WorkShares`, `Public`, `Data`, etc.) are prime targets — they were created intentionally and often contain sensitive data.
 - SMB signing "enabled but not required" means NTLM relay attacks are possible in a real environment.
 - WinRM on 5985 is worth noting for later — if credentials are found, it's a direct shell via `evil-winrm`.
-
----
-
-*Walkthrough by Jack — 2026-02-16*

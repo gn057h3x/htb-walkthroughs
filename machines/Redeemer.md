@@ -65,7 +65,3 @@ For a real engagement, you'd also want to check other databases (`SELECT 1` thro
 - Port 6379 is outside nmap's top 1000 — always include it explicitly (`-p 6379`) or scan all ports when testing infrastructure.
 - In-memory data stores are high-value targets. They often hold session tokens, cached API responses, and temporary credentials that never hit disk.
 - Key Redis commands for enumeration: `INFO` (server details), `KEYS *` (list all keys), `GET` (retrieve values), `SELECT` (switch databases).
-
----
-
-*Walkthrough by Jack — 2026-02-16*
