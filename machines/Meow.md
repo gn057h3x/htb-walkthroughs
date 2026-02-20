@@ -1,14 +1,3 @@
----
-title: Meow
-platform: Hack The Box
-category: Starting Point
-difficulty: Very Easy
-os: Linux
-date_started: 2026-02-16
-date_completed: 2026-02-16
-tags: [htb, starting-point, linux, telnet, default-creds]
----
-
 > **Disclaimer:** This writeup is published after the machine was retired from Hack The Box. All flags are unique per user.
 
 # Meow

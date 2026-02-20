@@ -1,14 +1,3 @@
----
-title: Cap
-platform: Hack The Box
-category: Machines
-difficulty: Easy
-os: Linux
-date_started: 2026-02-16
-date_completed: 2026-02-16
-tags: [htb, easy, linux, idor, pcap, ftp, cap_setuid, python, gunicorn]
----
-
 > **Disclaimer:** This writeup is published after the machine was retired from Hack The Box. All flags are unique per user.
 
 # Cap
