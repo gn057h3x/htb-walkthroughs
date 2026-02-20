@@ -11,52 +11,62 @@ tags: [htb, starting-point, linux, telnet, default-creds]
 
 > **Disclaimer:** This writeup is published after the machine was retired from Hack The Box. All flags are unique per user.
 
-# Meow — HTB Starting Point
+# Meow
 
-## Target Info
+**Hack The Box** · Very Easy · Linux
 
-| Field | Value |
-|-------|-------|
-| Platform | HTB Starting Point |
-| Target IP | <TARGET_IP> |
-| Attack IP | <ATTACK_IP> |
-| OS | Linux |
-| Difficulty | Very Easy |
+`Telnet` · `Default Credentials` · `Blank Password`
 
-## Recon
+---
 
-### Nmap Scan
-- **Port 23/tcp** — Telnet (open)
-- 999 closed ports
-- No version banner grabbed (service detection inconclusive)
+## Overview
 
-## Enumeration
+Meow is the first Starting Point machine on Hack The Box. It introduces the basics — connecting to the VPN, scanning a target, and logging into an exposed service. The entire attack surface is a single Telnet port with no authentication on the root account.
 
-- Only service exposed: Telnet on port 23
-- No web, SSH, or other services running
+---
 
-## Exploitation
+## Reconnaissance
 
-- Connected via `telnet <TARGET_IP>`
-- Login: `root` with blank password (no authentication)
-- Dropped straight into root shell
+```bash
+nmap -sC -sV <TARGET_IP>
+```
 
-## Flags
+```
+PORT   STATE SERVICE REASON
+23/tcp open  telnet  syn-ack
+```
 
-- [x] Root flag: `<flag_redacted>`
+Only one port open — Telnet on 23. No SSH, no web server, nothing else. Nmap's service detection didn't grab a version banner, but the service itself is clear.
 
-## Lessons Learned
+---
 
-- Telnet exposes credentials in plaintext — should never be internet-facing
-- Default/blank credentials on root account = immediate full compromise
-- Always check for telnet and other legacy protocols during recon
-- HTB telnet service is slow to present the login banner — patience needed
+## Logging In with a Blank Password
 
-## Timeline
+With only Telnet available, the first thing to try is common default credentials. Telnet doesn't encrypt anything — credentials travel in plaintext, which is why it should never be exposed.
 
-| Time | Action |
-|------|--------|
-| 2026-02-16 | Started — VPN connected |
-| 2026-02-16 | Nmap scan — port 23/tcp telnet open |
-| 2026-02-16 | Telnet root login with blank password — pwned |
-| 2026-02-16 | Root flag captured — box complete |
+```bash
+telnet <TARGET_IP>
+```
+
+```
+Meow login: root
+Password: [blank]
+
+Welcome to Ubuntu 20.04.2 LTS
+root@Meow:~#
+```
+
+The `root` account accepts a blank password. No brute-forcing, no credential hunting — just an empty password field and full system access.
+
+---
+
+## Takeaways
+
+- Telnet transmits everything in cleartext — it should never be internet-facing. SSH exists for a reason.
+- Default and blank credentials on privileged accounts are still one of the most common findings in real environments.
+- Always test common usernames (`root`, `admin`, `administrator`) with empty passwords before moving to wordlists.
+- The Telnet banner can be slow to appear on HTB — give it a few seconds before assuming the connection failed.
+
+---
+
+*Walkthrough by Jack — 2026-02-16*

@@ -11,52 +11,65 @@ tags: [htb, starting-point, linux, ftp, anonymous-access]
 
 > **Disclaimer:** This writeup is published after the machine was retired from Hack The Box. All flags are unique per user.
 
-# Fawn — HTB Starting Point
+# Fawn
 
-## Target Info
+**Hack The Box** · Very Easy · Linux
 
-| Field | Value |
-|-------|-------|
-| Platform | HTB Starting Point |
-| Target IP | <TARGET_IP> |
-| Attack IP | <ATTACK_IP> |
-| OS | Linux |
-| Difficulty | Very Easy |
+`FTP` · `Anonymous Login` · `Sensitive File Exposure`
 
-## Recon
+---
 
-### Nmap Scan
-- **Port 21/tcp** — FTP (vsftpd 3.0.3)
-- Anonymous FTP login allowed
-- `flag.txt` visible in FTP root
-- 999 closed ports
+## Overview
 
-## Enumeration
+Fawn teaches FTP enumeration and the risk of anonymous access. The machine runs a single FTP service that allows unauthenticated login, exposing a flag file directly in the FTP root.
 
-- vsftpd 3.0.3 on Unix
-- Anonymous login enabled (FTP code 230)
-- Single file in FTP root: `flag.txt` (32 bytes)
+---
 
-## Exploitation
+## Reconnaissance
 
-- Anonymous FTP login — no credentials needed
-- `curl ftp://anonymous:@<TARGET_IP>/flag.txt` to grab the flag directly
+```bash
+nmap -sC -sV <TARGET_IP>
+```
 
-## Flags
+```
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_-rw-r--r--    1 0        0              32 Jun 04  2021 flag.txt
+```
 
-- [x] Root flag: `<flag_redacted>`
+One port: FTP on 21 running vsftpd 3.0.3. Nmap's `ftp-anon` script immediately flags that anonymous login is allowed and even lists the files — `flag.txt` is sitting right there in the FTP root.
 
-## Lessons Learned
+---
 
-- Anonymous FTP access can expose sensitive files directly
-- Nmap's `ftp-anon` script automatically detects anonymous login and lists visible files
-- vsftpd is a common Linux FTP server — always check for anonymous access
+## Grabbing the Flag via Anonymous FTP
 
-## Timeline
+Anonymous FTP means anyone can connect without credentials. The username is literally `anonymous` with any (or no) password.
 
-| Time | Action |
-|------|--------|
-| 2026-02-16 | Started — target spawned |
-| 2026-02-16 | Nmap scan — port 21/tcp FTP with anonymous access |
-| 2026-02-16 | Anonymous FTP login — flag grabbed |
-| 2026-02-16 | Root flag captured — box complete |
+```bash
+curl ftp://anonymous:@<TARGET_IP>/flag.txt
+```
+
+One command, one file. The FTP server hands over the flag without any authentication.
+
+Alternatively, you can use the interactive FTP client:
+
+```bash
+ftp <TARGET_IP>
+# Username: anonymous
+# Password: [blank]
+ftp> ls
+ftp> get flag.txt
+```
+
+---
+
+## Takeaways
+
+- Anonymous FTP is a common misconfiguration that can expose sensitive files. Always check for it during recon.
+- Nmap's default scripts (`-sC`) include `ftp-anon`, which automatically detects anonymous access and lists visible files — no manual testing needed.
+- `curl` can pull FTP files in a single command, which is faster than an interactive session for quick grabs.
+
+---
+
+*Walkthrough by Jack — 2026-02-16*

